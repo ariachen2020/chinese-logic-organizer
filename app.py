@@ -12,33 +12,29 @@ st.set_page_config(
 st.title("📝 中文語意邏輯整理器")
 st.markdown("使用 AI 技術改善中文文本的邏輯結構和表達清晰度")
 
-if "api_key" not in st.session_state:
-    st.session_state.api_key = ""
-
-if "gemini_api" not in st.session_state:
-    st.session_state.gemini_api = None
+st.session_state.api_key = ""
+st.session_state.gemini_api = None
 
 with st.sidebar:
     st.header("⚙️ 設定")
     api_key = st.text_input(
         "Gemini API Key",
         type="password",
-        value=st.session_state.api_key,
-        help="請輸入您的 Google Gemini API Key"
+        value="",
+        placeholder="請貼上您的 Gemini API Key",
+        help="每次使用都需要重新輸入 API Key"
     )
     
-    if api_key != st.session_state.api_key:
-        st.session_state.api_key = api_key
-        st.session_state.gemini_api = None
+    st.session_state.api_key = api_key
     
     if api_key:
-        if st.session_state.gemini_api is None:
-            try:
-                os.environ["GEMINI_API_KEY"] = api_key
-                st.session_state.gemini_api = GeminiAPI()
-                st.success("✅ API 連接成功")
-            except Exception as e:
-                st.error(f"❌ API 連接失敗: {str(e)}")
+        try:
+            os.environ["GEMINI_API_KEY"] = api_key
+            st.session_state.gemini_api = GeminiAPI()
+            st.success("✅ API 連接成功")
+        except Exception as e:
+            st.error(f"❌ API 連接失敗: {str(e)}")
+            st.session_state.gemini_api = None
     
     st.markdown("---")
     st.markdown("### 📋 使用說明")
@@ -60,7 +56,7 @@ with col1:
     )
 
 if st.button("🚀 開始整理", type="primary", use_container_width=True):
-    if not st.session_state.api_key:
+    if not api_key:
         st.error("❌ 請先在側邊欄輸入 Gemini API Key")
     elif not input_text.strip():
         st.error("❌ 請輸入要整理的文字")
@@ -79,6 +75,21 @@ if st.button("🚀 開始整理", type="primary", use_container_width=True):
                         height=300,
                         disabled=True
                     )
+                    
+                    # 複製按鈕區域
+                    col_copy1, col_copy2 = st.columns([1, 1])
+                    with col_copy1:
+                        if st.button("📋 顯示可複製文本", use_container_width=True):
+                            st.session_state.show_copyable = True
+                    with col_copy2:
+                        if st.button("🔄 重新整理", use_container_width=True):
+                            st.rerun()
+                    
+                    # 顯示可選取複製的文本
+                    if hasattr(st.session_state, 'show_copyable') and st.session_state.show_copyable:
+                        st.markdown("**📋 可選取複製的文本：**")
+                        st.text(result["improved"])
+                        st.info("💡 請選取上方文本並按 Ctrl+C (Windows) 或 Cmd+C (Mac) 複製")
                 
                 st.markdown("---")
                 
